@@ -204,9 +204,9 @@ public class AccountService {
                 You have successfully purchased %.2f units of %s for a total amount of $%.2f.
 
                 Current holdings of %s: %.2f units
-                - %s: %.2f units purchased at $%.2f
+
                 Summary of current assets:
-                - %s: %.2f units purchased at $%.2f
+                %s
 
                 Account Balance: $%.2f
                 Net Worth: $%.2f
@@ -222,9 +222,7 @@ public class AccountService {
                 Double.parseDouble(assetRequestDTO.getAmount()),
                 assetRequestDTO.getAssetSymbol(),
                 currentHoldings,
-                assetRequestDTO.getAssetSymbol(),
-                quantity,
-                currentPrice,
+                generateAssetSummary(user, assetRequestDTO.getAssetSymbol()),
                 user.getBalance(),
                 netWorth);
 
@@ -304,7 +302,7 @@ public class AccountService {
                 Remaining holdings of %s: %.2f units
 
                 Summary of current assets:
-                - %s: %.2f units purchased at $%.2f
+                %s
 
                 Account Balance: $%.2f
                 Net Worth: $%.2f
@@ -320,9 +318,7 @@ public class AccountService {
                 totalGainLoss,
                 assetRequestDTO.getAssetSymbol(),
                 remainingHoldings,
-                assetRequestDTO.getAssetSymbol(),
-                remainingHoldings,
-                currentPrice,
+                generateAssetSummary(user, assetRequestDTO.getAssetSymbol()),
                 user.getBalance(),
                 netWorth);
 
@@ -384,6 +380,24 @@ public class AccountService {
                 .stream()
                 .mapToDouble(Asset::getQuantity)
                 .sum();
+    }
+
+    private String generateAssetSummary(User user, String symbol) {
+        StringBuilder summary = new StringBuilder();
+        List<Asset> assets = assetRepository.findByUserAndAssetSymbol(user, symbol);
+        
+        Map<Double, Double> assetsByPrice = assets.stream()
+            .collect(Collectors.groupingBy(
+                Asset::getPurchasePrice,
+                Collectors.summingDouble(Asset::getQuantity)
+            ));
+        
+        assetsByPrice.forEach((price, quantity) -> {
+            summary.append(String.format("- %s: %.2f units purchased at $%.2f%n", 
+                symbol, quantity, price));
+        });
+        
+        return summary.toString();
     }
 
     public double calculateNetWorth() {
