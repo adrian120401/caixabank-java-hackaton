@@ -2,8 +2,6 @@ package com.hackathon.bankingapp.Entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -43,7 +41,8 @@ public class User implements UserDetails {
 
     @PrePersist
     public void generateAccountNumber() {
-        this.accountNumber = UUID.randomUUID();
+        String fullUUID = UUID.randomUUID().toString();
+        this.accountNumber = UUID.fromString(fullUUID.substring(0, 6));
     }
 
     @Override
