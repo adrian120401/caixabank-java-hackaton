@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/api/account")
 public class AccountController {
@@ -135,4 +134,9 @@ public class AccountController {
         return ResponseEntity.ok(accountService.calculateNetWorth());
     }
 
+    @GetMapping("/assets")
+    public ResponseEntity<Map<String, Double>> getUserAssets() {
+        Map<String, Double> holdings = accountService.getUserAssets();
+        return ResponseEntity.ok(holdings);
+    }
 }

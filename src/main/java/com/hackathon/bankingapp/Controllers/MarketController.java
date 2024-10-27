@@ -24,10 +24,8 @@ public class MarketController {
     }
 
     @GetMapping("/prices/{symbol}")
-    public ResponseEntity<Map<String, Double>> getAssetPrice(@PathVariable String symbol) {
+    public ResponseEntity<Double> getAssetPrice(@PathVariable String symbol) {
         Map<String, Double> prices = accountService.getAssetPrices();
-        Map<String, Double> response = new HashMap<>();
-        response.put(symbol, prices.get(symbol));
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(prices.get(symbol));
     }
 }

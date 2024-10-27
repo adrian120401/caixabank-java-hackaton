@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.UUID;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
@@ -166,14 +167,14 @@ public class AccountService {
 
         Map<String, Double> assetPrices = getAssetPrices();
         if (!assetPrices.containsKey(assetRequestDTO.getAssetSymbol())) {
-            throw new RuntimeException("Asset not found");
+            throw new RuntimeException("Internal error occurred while purchasing the asset");
         }
-        
+
         double currentPrice = assetPrices.get(assetRequestDTO.getAssetSymbol());
-        double quantity = Double.parseDouble(assetRequestDTO.getAmount()) / currentPrice;
+        double quantity = Math.round((Double.parseDouble(assetRequestDTO.getAmount()) / currentPrice) * 1e10) / 1e10;
 
         if (Double.parseDouble(assetRequestDTO.getAmount()) > user.getBalance()) {
-            throw new RuntimeException("Insufficient balance");
+            throw new RuntimeException("Internal error occurred while purchasing the asset");
         }
 
         Asset asset = new Asset();
@@ -203,7 +204,7 @@ public class AccountService {
                 You have successfully purchased %.2f units of %s for a total amount of $%.2f.
 
                 Current holdings of %s: %.2f units
-
+                - %s: %.2f units purchased at $%.2f
                 Summary of current assets:
                 - %s: %.2f units purchased at $%.2f
 
@@ -231,6 +232,11 @@ public class AccountService {
                 user.getEmail(),
                 "Investment Purchase Confirmation",
                 emailBody);
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Investment Purchase Confirmation",
+                emailBody);
     }
 
     public void sellAsset(AssetSellDTO assetRequestDTO) {
@@ -250,7 +256,7 @@ public class AccountService {
         double totalHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
 
         if (quantityToSell > totalHoldings) {
-            throw new RuntimeException("Insufficient assets");
+            throw new RuntimeException("Internal error occurred while purchasing the asset");
         }
 
         double totalGainLoss = 0;
@@ -326,6 +332,19 @@ public class AccountService {
                 emailBody);
     }
 
+    public Map<String, Double> getUserAssets() {
+        String username = jwtProvider.getCurrentUserDetails().getUsername();
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        Map<String, Double> holdings = assetRepository.findByUser(user).stream()
+                .collect(Collectors.groupingBy(
+                        Asset::getAssetSymbol,
+                        Collectors.summingDouble(Asset::getQuantity)));
+
+        return holdings;
+    }
+
     public Map<String, Double> getAssetPrices() {
         ResponseEntity<Map<String, Double>> response = restTemplate.exchange(
                 "https://faas-lon1-917a94a7.doserverless.co/api/v1/web/fn-e0f31110-7521-4cb9-86a2-645f66eefb63/default/market-prices-simulator",
@@ -335,7 +354,7 @@ public class AccountService {
                 });
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new RuntimeException("Failed to fetch asset prices");
+            throw new RuntimeException("Internal error occurred while purchasing the asset");
         }
 
         return response.getBody();
