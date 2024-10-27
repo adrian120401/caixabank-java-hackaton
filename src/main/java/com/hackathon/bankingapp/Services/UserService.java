@@ -10,8 +10,6 @@ import com.hackathon.bankingapp.Exceptions.UnauthorizedException;
 import com.hackathon.bankingapp.Repositories.UserRepository;
 import com.hackathon.bankingapp.Security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,8 +21,6 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
 
     @Autowired
     private JwtTokenProvider jwtProvider;
@@ -33,11 +29,13 @@ public class UserService {
 
     public UserResponseDTO register(UserRequestDTO userRequestDTO) {
         if (userRepository.findByEmail(userRequestDTO.getEmail()).isPresent()) {
-            throw new BadRequestException("Email already exists.");
+            throw new BadRequestException("Email already exists");
         }
         if (userRepository.findByPhoneNumber(userRequestDTO.getPhoneNumber()).isPresent()) {
-            throw new BadRequestException("Phone number already exists.");
+            throw new BadRequestException("Phone number already exists");
         }
+
+        validatePassword(userRequestDTO.getPassword());
 
         User user = new User();
         user.setName(userRequestDTO.getName());
@@ -66,10 +64,28 @@ public class UserService {
                     try {
                         UUID accountNumber = UUID.fromString(identifier);
                         return userRepository.findByAccountNumber(accountNumber)
-                                .orElseThrow(() -> new NotFoundException("User not found with identifier: " + identifier));
+                                .orElseThrow(() -> new NotFoundException("User not found for the given identifier: " + identifier));
                     } catch (IllegalArgumentException e) {
-                        throw new NotFoundException("User not found with identifier: " + identifier);
+                        throw new NotFoundException("User not found for the given identifier: " + identifier);
                     }
                 });
+    }
+
+    private void validatePassword(String password) {
+        if (password.length() < 8 || password.length() > 127) {
+            throw new BadRequestException("Password must be between 8 and 127 characters long");
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            throw new BadRequestException("Password must contain at least one uppercase letter");
+        }
+        if (!password.matches(".*[0-9].*")) {
+            throw new BadRequestException("Password must contain at least one digit");
+        }
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
+            throw new BadRequestException("Password must contain at least one special character");
+        }
+        if (password.contains(" ")) {
+            throw new BadRequestException("Password cannot contain whitespace");
+        }
     }
 }
