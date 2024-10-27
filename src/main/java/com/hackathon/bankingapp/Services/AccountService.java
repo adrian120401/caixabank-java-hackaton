@@ -195,7 +195,7 @@ public class AccountService {
         transactionRepository.save(transaction);
 
         double currentHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
-        double netWorth = calculateNetWorth(user);
+        double netWorth = calculateNetWorth();
 
         String emailBody = String.format("""
                 Dear %s,
@@ -286,7 +286,7 @@ public class AccountService {
         transactionRepository.save(transaction);
 
         double remainingHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
-        double netWorth = calculateNetWorth(user);
+        double netWorth = calculateNetWorth();
 
         String emailBody = String.format("""
                 Dear %s,
