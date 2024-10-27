@@ -41,8 +41,7 @@ public class User implements UserDetails {
 
     @PrePersist
     public void generateAccountNumber() {
-        String fullUUID = UUID.randomUUID().toString();
-        this.accountNumber = UUID.fromString(fullUUID.substring(0, 6));
+        this.accountNumber = UUID.randomUUID();
     }
 
     @Override
