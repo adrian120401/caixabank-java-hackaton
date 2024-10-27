@@ -51,21 +51,25 @@ public class UserService {
     }
 
     public Map<String, String> login(LoginRequestDTO loginRequestDTO) {
-        User user = userRepository.findByEmail(loginRequestDTO.getIdentifier())
-                .orElseGet(() -> {
-                    try {
-                        UUID accountNumber = UUID.fromString(loginRequestDTO.getIdentifier());
-                        return userRepository.findByAccountNumber(accountNumber)
-                                .orElseThrow(() -> new NotFoundException("User not found with identifier: " + loginRequestDTO.getIdentifier()));
-                    } catch (IllegalArgumentException e) {
-                        throw new NotFoundException("User not found with identifier: " + loginRequestDTO.getIdentifier());
-                    }
-                });
+        User user = getUserByIdentifier(loginRequestDTO.getIdentifier());
 
         if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getHashedPassword())) {
             throw new UnauthorizedException("Bad credentials");
         }
         String token = jwtProvider.generateToken(user.getEmail());
         return Map.of("token", token);
+    }
+
+    public User getUserByIdentifier(String identifier) {
+        return userRepository.findByEmail(identifier)
+                .orElseGet(() -> {
+                    try {
+                        UUID accountNumber = UUID.fromString(identifier);
+                        return userRepository.findByAccountNumber(accountNumber)
+                                .orElseThrow(() -> new NotFoundException("User not found with identifier: " + identifier));
+                    } catch (IllegalArgumentException e) {
+                        throw new NotFoundException("User not found with identifier: " + identifier);
+                    }
+                });
     }
 }
