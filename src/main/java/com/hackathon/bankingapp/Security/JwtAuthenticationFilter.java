@@ -34,13 +34,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtProvider.validateToken(token)) {
             if (revokedTokenService.isTokenRevoked(token)) {
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access Denied");
                 return;
             }
             String username = jwtProvider.getUsernameFromToken(token);
             User user = userRepository.findByEmail(username).orElse(null);
             if (user == null) {
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access Denied");
                 return;
             }
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
