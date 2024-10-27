@@ -1,6 +1,9 @@
 package com.hackathon.bankingapp.Services;
 
+import com.hackathon.bankingapp.DTO.AssetBuyDTO;
+import com.hackathon.bankingapp.DTO.AssetSellDTO;
 import com.hackathon.bankingapp.DTO.TransactionResponseDTO;
+import com.hackathon.bankingapp.Entities.Asset;
 import com.hackathon.bankingapp.Entities.Transaction;
 import com.hackathon.bankingapp.Entities.User;
 import com.hackathon.bankingapp.Exceptions.ForbiddenException;
@@ -8,14 +11,21 @@ import com.hackathon.bankingapp.Exceptions.NotFoundException;
 import com.hackathon.bankingapp.Exceptions.UnauthorizedException;
 import com.hackathon.bankingapp.Repositories.TransactionRepository;
 import com.hackathon.bankingapp.Repositories.UserRepository;
+import com.hackathon.bankingapp.Repositories.AssetRepository;
 import com.hackathon.bankingapp.Security.JwtTokenProvider;
 import com.hackathon.bankingapp.Utils.Enums.TransactionType;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
 
 @Service
 public class AccountService {
@@ -25,6 +35,12 @@ public class AccountService {
     private TransactionRepository transactionRepository;
     @Autowired
     private JwtTokenProvider jwtProvider;
+    @Autowired
+    private AssetRepository assetRepository;
+    @Autowired
+    private RestTemplate restTemplate;
+    @Autowired
+    private EmailService emailService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -104,7 +120,8 @@ public class AccountService {
             throw new ForbiddenException("Invalid PIN");
         }
 
-        User targetAccount = userRepository.findByAccountNumber(UUID.fromString(targetAccountNumber)).orElseThrow(() -> new NotFoundException("Target account not found"));
+        User targetAccount = userRepository.findByAccountNumber(UUID.fromString(targetAccountNumber))
+                .orElseThrow(() -> new NotFoundException("Target account not found"));
 
         if (Double.parseDouble(amount) > user.getBalance()) {
             throw new ForbiddenException("Insufficient balance");
@@ -133,8 +150,212 @@ public class AccountService {
             transactionResponseDTO.setTransactionType(transaction.getTransactionType().toString());
             transactionResponseDTO.setTransactionDate(transaction.getTransactionDate());
             transactionResponseDTO.setSourceAccountNumber(user.getAccountNumber().toString());
-            transactionResponseDTO.setTargetAccountNumber(transaction.getTargetAccount() == null ? "N/A" : transaction.getTargetAccount().getAccountNumber().toString());
+            transactionResponseDTO.setTargetAccountNumber(transaction.getTargetAccount() == null ? "N/A"
+                    : transaction.getTargetAccount().getAccountNumber().toString());
             return transactionResponseDTO;
         }).toList();
+    }
+
+    public void buyAsset(AssetBuyDTO assetRequestDTO) {
+        String username = jwtProvider.getCurrentUserDetails().getUsername();
+        User user = userRepository.findByEmail(username).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!user.getPin().equals(assetRequestDTO.getPin())) {
+            throw new ForbiddenException("Invalid PIN");
+        }
+
+        Map<String, Double> assetPrices = getAssetPrices();
+        if (!assetPrices.containsKey(assetRequestDTO.getAssetSymbol())) {
+            throw new RuntimeException("Asset not found");
+        }
+        
+        double currentPrice = assetPrices.get(assetRequestDTO.getAssetSymbol());
+        double quantity = Double.parseDouble(assetRequestDTO.getAmount()) / currentPrice;
+
+        if (Double.parseDouble(assetRequestDTO.getAmount()) > user.getBalance()) {
+            throw new RuntimeException("Insufficient balance");
+        }
+
+        Asset asset = new Asset();
+        asset.setAssetSymbol(assetRequestDTO.getAssetSymbol());
+        asset.setQuantity(quantity);
+        asset.setPurchasePrice(currentPrice);
+        asset.setPurchaseDate(System.currentTimeMillis());
+        asset.setUser(user);
+        assetRepository.save(asset);
+
+        user.setBalance(user.getBalance() - Double.parseDouble(assetRequestDTO.getAmount()));
+        userRepository.save(user);
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(Double.parseDouble(assetRequestDTO.getAmount()));
+        transaction.setTransactionType(TransactionType.ASSET_PURCHASE);
+        transaction.setTransactionDate(System.currentTimeMillis());
+        transaction.setSourceAccount(user);
+        transactionRepository.save(transaction);
+
+        double currentHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
+        double netWorth = calculateNetWorth(user);
+
+        String emailBody = String.format("""
+                Dear %s,
+
+                You have successfully purchased %.2f units of %s for a total amount of $%.2f.
+
+                Current holdings of %s: %.2f units
+
+                Summary of current assets:
+                - %s: %.2f units purchased at $%.2f
+
+                Account Balance: $%.2f
+                Net Worth: $%.2f
+
+                Thank you for using our investment services.
+
+                Best Regards,
+                Investment Management Team
+                """,
+                user.getName(),
+                quantity,
+                assetRequestDTO.getAssetSymbol(),
+                Double.parseDouble(assetRequestDTO.getAmount()),
+                assetRequestDTO.getAssetSymbol(),
+                currentHoldings,
+                assetRequestDTO.getAssetSymbol(),
+                quantity,
+                currentPrice,
+                user.getBalance(),
+                netWorth);
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Investment Purchase Confirmation",
+                emailBody);
+    }
+
+    public void sellAsset(AssetSellDTO assetRequestDTO) {
+        String username = jwtProvider.getCurrentUserDetails().getUsername();
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!user.getPin().equals(assetRequestDTO.getPin())) {
+            throw new ForbiddenException("Invalid PIN");
+        }
+
+        Map<String, Double> assetPrices = getAssetPrices();
+        double currentPrice = assetPrices.get(assetRequestDTO.getAssetSymbol());
+        double quantityToSell = Double.parseDouble(assetRequestDTO.getQuantity());
+
+        List<Asset> userAssets = assetRepository.findByUserAndAssetSymbol(user, assetRequestDTO.getAssetSymbol());
+        double totalHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
+
+        if (quantityToSell > totalHoldings) {
+            throw new RuntimeException("Insufficient assets");
+        }
+
+        double totalGainLoss = 0;
+        double remainingQuantityToSell = quantityToSell;
+
+        for (Asset asset : userAssets) {
+            if (remainingQuantityToSell <= 0)
+                break;
+
+            double quantityFromThisAsset = Math.min(remainingQuantityToSell, asset.getQuantity());
+            double gainLoss = (currentPrice - asset.getPurchasePrice()) * quantityFromThisAsset;
+            totalGainLoss += gainLoss;
+
+            if (quantityFromThisAsset == asset.getQuantity()) {
+                assetRepository.delete(asset);
+            } else {
+                asset.setQuantity(asset.getQuantity() - quantityFromThisAsset);
+                assetRepository.save(asset);
+            }
+
+            remainingQuantityToSell -= quantityFromThisAsset;
+        }
+
+        double saleProceeds = quantityToSell * currentPrice;
+        user.setBalance(user.getBalance() + saleProceeds);
+        userRepository.save(user);
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(saleProceeds);
+        transaction.setTransactionType(TransactionType.ASSET_SELL);
+        transaction.setTransactionDate(System.currentTimeMillis());
+        transaction.setSourceAccount(user);
+        transactionRepository.save(transaction);
+
+        double remainingHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
+        double netWorth = calculateNetWorth(user);
+
+        String emailBody = String.format("""
+                Dear %s,
+
+                You have successfully sold %.2f units of %s.
+
+                Total Gain/Loss: $%.2f
+
+                Remaining holdings of %s: %.2f units
+
+                Summary of current assets:
+                - %s: %.2f units purchased at $%.2f
+
+                Account Balance: $%.2f
+                Net Worth: $%.2f
+
+                Thank you for using our investment services.
+
+                Best Regards,
+                Investment Management Team
+                """,
+                user.getName(),
+                quantityToSell,
+                assetRequestDTO.getAssetSymbol(),
+                totalGainLoss,
+                assetRequestDTO.getAssetSymbol(),
+                remainingHoldings,
+                assetRequestDTO.getAssetSymbol(),
+                remainingHoldings,
+                currentPrice,
+                user.getBalance(),
+                netWorth);
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Investment Sale Confirmation",
+                emailBody);
+    }
+
+    public Map<String, Double> getAssetPrices() {
+        ResponseEntity<Map<String, Double>> response = restTemplate.exchange(
+                "https://faas-lon1-917a94a7.doserverless.co/api/v1/web/fn-e0f31110-7521-4cb9-86a2-645f66eefb63/default/market-prices-simulator",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<Map<String, Double>>() {
+                });
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("Failed to fetch asset prices");
+        }
+
+        return response.getBody();
+    }
+
+    private double getCurrentHoldings(User user, String assetSymbol) {
+        return assetRepository.findByUserAndAssetSymbol(user, assetSymbol)
+                .stream()
+                .mapToDouble(Asset::getQuantity)
+                .sum();
+    }
+
+    public double calculateNetWorth() {
+        String username = jwtProvider.getCurrentUserDetails().getUsername();
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        Map<String, Double> currentPrices = getAssetPrices();
+        double assetsValue = assetRepository.findByUser(user).stream()
+                .mapToDouble(asset -> asset.getQuantity() * currentPrices.get(asset.getAssetSymbol()))
+                .sum();
+        return user.getBalance() + assetsValue;
     }
 }

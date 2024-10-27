@@ -5,16 +5,15 @@ import com.hackathon.bankingapp.Entities.User;
 import com.hackathon.bankingapp.Exceptions.BadRequestException;
 import com.hackathon.bankingapp.Repositories.OtpCodesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
 
 @Service
 public class OTPService {
+
     @Autowired
-    private JavaMailSender javaMailSender;
+    private EmailService emailService;
 
     @Autowired
     private OtpCodesRepository otpCodesRepository;
@@ -29,11 +28,7 @@ public class OTPService {
     }
 
     public void sendOTP(String otp, String email) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Your OTP for Password Reset");
-        message.setText("OTP:" + otp);
-        javaMailSender.send(message);
+        emailService.sendEmail(email, "Your OTP for Password Reset", "OTP:" + otp);
     }
 
     public OtpCodes getByUserAndCode(User user, String code) {

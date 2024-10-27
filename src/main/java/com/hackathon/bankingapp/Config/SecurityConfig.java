@@ -34,7 +34,9 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/login",
                                 "/api/auth/password-reset",
-                                "/api/auth/password-reset/*"
+                                "/api/auth/password-reset/*",
+                                "/market/prices",
+                                "/market/prices/*"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
