@@ -57,7 +57,7 @@ public class SubscriptionService {
             if (currentTime - sub.getLastExecutionTime() >= sub.getIntervalSeconds()) {
                 try {
                     if (sub.getAmount() > sub.getUser().getBalance()) {
-                        throw new ForbiddenException("Insufficient balance");
+                        return;
                     }
                     sub.getUser().setBalance(sub.getUser().getBalance() - sub.getAmount());
                     userRepository.save(sub.getUser());
