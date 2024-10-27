@@ -2,6 +2,7 @@ package com.hackathon.bankingapp.Services;
 
 import com.hackathon.bankingapp.Entities.OtpCodes;
 import com.hackathon.bankingapp.Entities.User;
+import com.hackathon.bankingapp.Exceptions.BadRequestException;
 import com.hackathon.bankingapp.Exceptions.NotFoundException;
 import com.hackathon.bankingapp.Exceptions.UnauthorizedException;
 import com.hackathon.bankingapp.Repositories.UserRepository;
@@ -41,7 +42,7 @@ public class AuthService {
         User user = userService.getUserByIdentifier(identifier);
         OtpCodes otpCodes = otpService.getByUserAndCode(user, otp);
         if (!otpCodes.getCode().equals(otp)) {
-            throw new UnauthorizedException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP");
         }
 
         return jwtProvider.generateToken(user.getEmail());
@@ -50,7 +51,7 @@ public class AuthService {
     public void resetPassword(String identifier, String token,String password) {
         User user = userService.getUserByIdentifier(identifier);
         if (!jwtProvider.validateToken(token)) {
-            throw new UnauthorizedException("Invalid token");
+            throw new BadRequestException("Invalid reset token");
         }
         user.setHashedPassword(passwordEncoder.encode(password));
         userRepository.save(user);

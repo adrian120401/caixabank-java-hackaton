@@ -14,6 +14,7 @@ public class OtpCodes {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @Column(nullable = false)
     private String code;
 
     @ManyToOne

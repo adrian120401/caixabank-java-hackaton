@@ -30,6 +30,6 @@ public class DashboardService {
     public AccountInfoResponse getAccount() {
         String username = jwtProvider.getCurrentUserDetails().getUsername();
         User user =  userRepository.findByEmail(username).orElseThrow(() -> new NotFoundException("User not found."));
-        return new AccountInfoResponse(user.getAccountNumber().toString(), 0.0);
+        return new AccountInfoResponse(user.getAccountNumber().toString(), user.getBalance());
     }
 }

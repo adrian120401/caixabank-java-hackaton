@@ -2,6 +2,7 @@ package com.hackathon.bankingapp.Services;
 
 import com.hackathon.bankingapp.Entities.OtpCodes;
 import com.hackathon.bankingapp.Entities.User;
+import com.hackathon.bankingapp.Exceptions.BadRequestException;
 import com.hackathon.bankingapp.Repositories.OtpCodesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -36,6 +37,6 @@ public class OTPService {
     }
 
     public OtpCodes getByUserAndCode(User user, String code) {
-        return otpCodesRepository.findByUserAndCode(user, code).orElseThrow(() -> new RuntimeException("Invalid OTP"));
+        return otpCodesRepository.findByUserAndCode(user, code).orElseThrow(() -> new BadRequestException("Invalid OTP"));
     }
 }

@@ -20,22 +20,26 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @Column(nullable = false)
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     private String address;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private UUID accountNumber;
 
     @Column(unique = true)
     private String phoneNumber;
 
+    @Column(nullable = false)
     private String hashedPassword;
 
     private String pin;
+
+    private double balance;
 
     @PrePersist
     public void generateAccountNumber() {
