@@ -35,6 +35,8 @@ public class User implements UserDetails {
 
     private String hashedPassword;
 
+    private String pin;
+
     @PrePersist
     public void generateAccountNumber() {
         this.accountNumber = UUID.randomUUID();
