@@ -119,19 +119,15 @@ public class AccountController {
     }
 
     @PostMapping("/buy-asset")
-    public ResponseEntity<Map<String, String>> buyAsset(@RequestBody AssetBuyDTO assetRequestDTO) {
+    public ResponseEntity<String> buyAsset(@RequestBody AssetBuyDTO assetRequestDTO) {
         accountService.buyAsset(assetRequestDTO);
-        Map<String, String> response = new HashMap<>();
-        response.put("msg", "Asset purchase successful.");
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok("Asset purchase successful.");
     }
 
     @PostMapping("/sell-asset")
-    public ResponseEntity<Map<String, String>> sellAsset(@RequestBody AssetSellDTO assetRequestDTO) {
+    public ResponseEntity<String> sellAsset(@RequestBody AssetSellDTO assetRequestDTO) {
         accountService.sellAsset(assetRequestDTO);
-        Map<String, String> response = new HashMap<>();
-        response.put("msg", "Asset sale successful.");
-        return ResponseEntity.ok().body(response);
+        return ResponseEntity.ok("Asset sale successful.");
     }
 
     @GetMapping("/net-worth")
