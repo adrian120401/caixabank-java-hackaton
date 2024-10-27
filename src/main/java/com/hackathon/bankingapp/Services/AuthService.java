@@ -3,15 +3,12 @@ package com.hackathon.bankingapp.Services;
 import com.hackathon.bankingapp.Entities.OtpCodes;
 import com.hackathon.bankingapp.Entities.User;
 import com.hackathon.bankingapp.Exceptions.BadRequestException;
-import com.hackathon.bankingapp.Exceptions.NotFoundException;
-import com.hackathon.bankingapp.Exceptions.UnauthorizedException;
 import com.hackathon.bankingapp.Repositories.UserRepository;
 import com.hackathon.bankingapp.Security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 
 @Service
 public class AuthService {

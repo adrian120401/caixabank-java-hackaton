@@ -345,6 +345,49 @@ public class AccountService {
         return holdings;
     }
 
+    public List<Asset> getUserAssetHistory(User user, String symbol) {
+        return assetRepository.findByUserAndAssetSymbol(user, symbol);
+    }
+
+    public double calculateAveragePurchasePrice(List<Asset> assets) {
+        if (assets.isEmpty())
+            return 0;
+
+        double totalCost = assets.stream()
+                .mapToDouble(asset -> asset.getQuantity() * asset.getPurchasePrice())
+                .sum();
+
+        double totalQuantity = assets.stream()
+                .mapToDouble(Asset::getQuantity)
+                .sum();
+
+        return totalCost / totalQuantity;
+    }
+
+    public void tryToBuy(User user, String symbol, double amount) {
+        try {
+            AssetBuyDTO buyDTO = new AssetBuyDTO();
+            buyDTO.setAssetSymbol(symbol);
+            buyDTO.setAmount(String.valueOf(amount));
+            buyDTO.setPin(user.getPin());
+            buyAsset(buyDTO);
+        } catch (Exception e) {
+            return;
+        }
+    }
+
+    public void tryToSell(User user, String symbol, double quantity) {
+        try {
+            AssetSellDTO sellDTO = new AssetSellDTO();
+            sellDTO.setAssetSymbol(symbol);
+            sellDTO.setQuantity(String.valueOf(quantity));
+            sellDTO.setPin(user.getPin());
+            sellAsset(sellDTO);
+        } catch (Exception e) {
+            return;
+        }
+    }
+
     public Map<String, Double> getAssetPrices() {
         ResponseEntity<Map<String, Double>> response = restTemplate.exchange(
                 "https://faas-lon1-917a94a7.doserverless.co/api/v1/web/fn-e0f31110-7521-4cb9-86a2-645f66eefb63/default/market-prices-simulator",
