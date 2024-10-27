@@ -24,7 +24,7 @@ public class DashboardService {
     public UserResponseDTO getUser() {
         String username = jwtProvider.getCurrentUserDetails().getUsername();
         User user =  userRepository.findByEmail(username).orElseThrow(() -> new NotFoundException("User not found."));
-        return new UserResponseDTO(user.getName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(), user.getAccountNumber(), user.getHashedPassword());
+        return new UserResponseDTO(user.getName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(), user.getAccountNumber().toString(), user.getHashedPassword());
     }
 
     public AccountInfoResponse getAccount() {

@@ -45,7 +45,7 @@ public class UserService {
         user.setHashedPassword(passwordEncoder.encode(userRequestDTO.getPassword()));
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(), user.getAccountNumber(), user.getHashedPassword());
+        return new UserResponseDTO(user.getName(), user.getEmail(), user.getPhoneNumber(), user.getAddress(), user.getAccountNumber().toString(), user.getHashedPassword());
     }
 
     public Map<String, String> login(LoginRequestDTO loginRequestDTO) {

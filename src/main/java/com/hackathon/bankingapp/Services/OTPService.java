@@ -32,7 +32,7 @@ public class OTPService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("Your OTP for Password Reset");
-        message.setText("OTP: " + otp);
+        message.setText("OTP:" + otp);
         javaMailSender.send(message);
     }
 
