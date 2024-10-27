@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,9 +23,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtTokenProvider jwtProvider;
-
-    @Autowired
-    private UserDetailsService userDetailsService;
 
     @Autowired
     private UserRepository userRepository;
@@ -41,21 +37,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtProvider.validateToken(token)) {
             if (revokedTokenService.isTokenRevoked(token)) {
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied.");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied");
                 return;
             }
             String username = jwtProvider.getUsernameFromToken(token);
             User user = userRepository.findByEmail(username).orElse(null);
             if (user == null) {
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied.");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied");
                 return;
             }
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     user, token, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } else {
-            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Access denied.");
-            return;
         }
 
         filterChain.doFilter(request, response);
