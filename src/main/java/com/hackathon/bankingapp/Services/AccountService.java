@@ -394,7 +394,7 @@ public class AccountService {
         
         assetsByPrice.forEach((price, quantity) -> {
             summary.append(String.format("- %s: %.2f units purchased at $%.2f%n", 
-                symbol, quantity, price));
+                symbol, quantity, price * quantity));
         });
         
         return summary.toString();

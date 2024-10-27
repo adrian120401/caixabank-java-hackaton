@@ -49,7 +49,7 @@ public class SubscriptionService {
         subscriptionRepository.save(subscription);
     }
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 1000)
     public void processSubscriptions() {
         List<Subscription> activeSubscriptions = subscriptionRepository.findByActive(true);
         for (Subscription sub : activeSubscriptions) {
