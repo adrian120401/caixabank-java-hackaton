@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class LoginRequestDTO {
+    
     @NotBlank(message = "Identifier is required")
     private String identifier;
 

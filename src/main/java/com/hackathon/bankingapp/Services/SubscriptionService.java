@@ -39,9 +39,15 @@ public class SubscriptionService {
             throw new ForbiddenException("Invalid PIN");
         }
 
+        Subscription existingSubscription = subscriptionRepository.findByUser(user).orElse(null);
+        if (existingSubscription != null) {
+            existingSubscription.setActive(false);
+            subscriptionRepository.save(existingSubscription);
+        }
+
         Subscription subscription = new Subscription();
         subscription.setUser(user);
-        subscription.setAmount(subscriptionRequestDTO.getAmount());
+        subscription.setAmount(Integer.parseInt(subscriptionRequestDTO.getAmount()));
         subscription.setIntervalSeconds(subscriptionRequestDTO.getIntervalSeconds());
         subscription.setActive(true);
         subscription.setLastExecutionTime(System.currentTimeMillis() / 1000);
