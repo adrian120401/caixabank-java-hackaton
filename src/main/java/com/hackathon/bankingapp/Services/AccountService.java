@@ -160,6 +160,7 @@ public class AccountService {
 
     public void buyAsset(AssetBuyDTO assetRequestDTO) {
         String username = jwtProvider.getCurrentUserDetails().getUsername();
+        
         User user = userRepository.findByEmail(username).orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!user.getPin().equals(assetRequestDTO.getPin())) {
