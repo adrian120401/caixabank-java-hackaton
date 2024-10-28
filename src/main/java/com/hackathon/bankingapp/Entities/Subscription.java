@@ -21,7 +21,7 @@ public class Subscription {
     @ManyToOne
     private User user;
 
-    private int amount;
+    private double amount;
 
     private int intervalSeconds;
 
