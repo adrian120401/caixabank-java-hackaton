@@ -12,8 +12,6 @@ import com.hackathon.bankingapp.DTO.TradingBotRequestDTO;
 import com.hackathon.bankingapp.Services.SubscriptionService;
 import com.hackathon.bankingapp.Services.TradingBotService;
 
-import jakarta.validation.Valid;
-
 @RestController
 @RequestMapping("/api/user-actions")
 public class UserActionsController {
@@ -24,13 +22,13 @@ public class UserActionsController {
     private TradingBotService tradingBotService;
 
     @PostMapping("/subscribe")
-    public ResponseEntity<String> createSubscription(@RequestBody @Valid SubscriptionRequestDTO subscriptionRequestDTO) {
+    public ResponseEntity<String> createSubscription(@RequestBody SubscriptionRequestDTO subscriptionRequestDTO) {
         subscriptionService.createSubscription(subscriptionRequestDTO);
         return ResponseEntity.ok("Subscription created successfully.");
     }
 
     @PostMapping("/enable-auto-invest")
-    public ResponseEntity<String> enableAutoInvest(@RequestBody @Valid TradingBotRequestDTO tradingBotRequestDTO) {
+    public ResponseEntity<String> enableAutoInvest(@RequestBody TradingBotRequestDTO tradingBotRequestDTO) {
         tradingBotService.createTradingBot(tradingBotRequestDTO);
         return ResponseEntity.ok("Automatic investment enabled successfully.");
     }
