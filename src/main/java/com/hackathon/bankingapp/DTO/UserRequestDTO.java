@@ -19,7 +19,7 @@ public class UserRequestDTO {
     @Pattern(regexp = ".*[0-9].*", message = "Password must contain at least one digit and one special character")
     @Pattern(regexp = ".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*", message = "Password must contain at least one special character")
     private String password;
-    
+
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email: ${validatedValue}")
     private String email;
@@ -29,4 +29,5 @@ public class UserRequestDTO {
 
     @NotBlank(message = "Phone number is required")
     private String phoneNumber;
+    
 }
