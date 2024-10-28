@@ -61,10 +61,10 @@ public class UserService {
                     try {
                         UUID accountNumber = UUID.fromString(identifier);
                         return userRepository.findByAccountNumber(accountNumber)
-                                .orElseThrow(() -> new BadRequestException(
+                                .orElseThrow(() -> new UnauthorizedException(
                                         "User not found for the given identifier: " + identifier));
                     } catch (IllegalArgumentException e) {
-                        throw new BadRequestException("User not found for the given identifier: " + identifier);
+                        throw new UnauthorizedException("User not found for the given identifier: " + identifier);
                     }
                 });
     }
