@@ -1,6 +1,12 @@
 package com.hackathon.bankingapp.Controllers;
 
+import com.hackathon.bankingapp.DTO.PasswordResetDTO;
+import com.hackathon.bankingapp.DTO.SendOTPDTO;
+import com.hackathon.bankingapp.DTO.VerifyOTPDTO;
 import com.hackathon.bankingapp.Services.AuthService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,16 +25,9 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/password-reset/send-otp")
-    public ResponseEntity<Map<String, String>> sendOPT(@RequestBody Map<String, Object> requestBody){
-        String identifier = (String) requestBody.get("identifier");
+    public ResponseEntity<Map<String, String>> sendOPT(@RequestBody @Valid SendOTPDTO sendOTPDTO) {
 
-        if (identifier == null || identifier.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Identifier is required");
-            return ResponseEntity.badRequest().body(response);
-        }
-
-        String email = authService.sendOTP(identifier);
+        String email = authService.sendOTP(sendOTPDTO.getIdentifier());
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "OTP sent successfully to: " + email);
@@ -36,17 +35,9 @@ public class AuthController {
     }
 
     @PostMapping("/password-reset/verify-otp")
-    public ResponseEntity<Map<String, String>> verifyOTP(@RequestBody Map<String, Object> requestBody){
-        String identifier = (String) requestBody.get("identifier");
-        String otp = (String) requestBody.get("otp");
+    public ResponseEntity<Map<String, String>> verifyOTP(@RequestBody @Valid VerifyOTPDTO verifyOTPDTO) {
 
-        if (identifier == null || identifier.isEmpty() || otp == null || otp.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Identifier and otp are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-
-        String token = authService.verifyOTP(identifier, otp);
+        String token = authService.verifyOTP(verifyOTPDTO.getIdentifier(), verifyOTPDTO.getOtp());
 
         Map<String, String> response = new HashMap<>();
         response.put("passwordResetToken", token);
@@ -54,18 +45,9 @@ public class AuthController {
     }
 
     @PostMapping("/password-reset")
-    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, Object> requestBody){
-        String identifier = (String) requestBody.get("identifier");
-        String token = (String) requestBody.get("resetToken");
-        String password = (String) requestBody.get("newPassword");
-
-        if (identifier == null || identifier.isEmpty() || token == null || token.isEmpty() || password == null || password.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Identifier, token and password are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-
-        authService.resetPassword(identifier, token, password);
+    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody @Valid PasswordResetDTO passwordResetDTO) {
+        authService.resetPassword(passwordResetDTO.getIdentifier(), passwordResetDTO.getResetToken(),
+                passwordResetDTO.getNewPassword());
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Password reset successfully");

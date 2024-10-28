@@ -3,6 +3,8 @@ package com.hackathon.bankingapp.Controllers;
 import com.hackathon.bankingapp.DTO.AssetBuyDTO;
 import com.hackathon.bankingapp.DTO.AssetSellDTO;
 import com.hackathon.bankingapp.DTO.DepositRequestDTO;
+import com.hackathon.bankingapp.DTO.PinRequestDTO;
+import com.hackathon.bankingapp.DTO.PinUpdateRequestDTO;
 import com.hackathon.bankingapp.DTO.TransactionResponseDTO;
 import com.hackathon.bankingapp.DTO.TransferRequestDTO;
 import com.hackathon.bankingapp.DTO.WithdrawRequestDTO;
@@ -26,16 +28,8 @@ public class AccountController {
     private AccountService accountService;
 
     @PostMapping("/pin/create")
-    public ResponseEntity<Map<String, String>> createPint(@RequestBody Map<String, Object> requestBody) {
-        String pin = (String) requestBody.get("pin");
-        String password = (String) requestBody.get("password");
-
-        if (pin == null || pin.isEmpty() || password == null || password.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Pin and password are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-        accountService.createPin(pin, password);
+    public ResponseEntity<Map<String, String>> createPint(@RequestBody @Valid PinRequestDTO pinRequestDTO) {
+        accountService.createPin(pinRequestDTO.getPin(), pinRequestDTO.getPassword());
 
         Map<String, String> response = new HashMap<>();
         response.put("msg", "PIN created successfully");
@@ -43,18 +37,9 @@ public class AccountController {
     }
 
     @PostMapping("/pin/update")
-    public ResponseEntity<Map<String, String>> updatePint(@RequestBody Map<String, Object> requestBody) {
-        String oldPin = (String) requestBody.get("oldPin");
-        String newPin = (String) requestBody.get("newPin");
-        String password = (String) requestBody.get("password");
-
-        if (oldPin == null || oldPin.isEmpty() || newPin == null || newPin.isEmpty() || password == null
-                || password.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Pin and password are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-        accountService.updatePin(oldPin, newPin, password);
+    public ResponseEntity<Map<String, String>> updatePint(@RequestBody @Valid PinUpdateRequestDTO pinUpdateRequestDTO) {
+        accountService.updatePin(pinUpdateRequestDTO.getOldPin(), pinUpdateRequestDTO.getNewPin(),
+                pinUpdateRequestDTO.getPassword());
 
         Map<String, String> response = new HashMap<>();
         response.put("msg", "PIN updated successfully");
