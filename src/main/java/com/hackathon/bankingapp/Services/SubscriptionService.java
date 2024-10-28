@@ -15,7 +15,7 @@ import com.hackathon.bankingapp.Entities.Transaction;
 import com.hackathon.bankingapp.Entities.User;
 import com.hackathon.bankingapp.Exceptions.ForbiddenException;
 import com.hackathon.bankingapp.Exceptions.NotFoundException;
-import com.hackathon.bankingapp.Exceptions.BadRequestException;
+
 import java.util.List;
 
 @Service
@@ -40,7 +40,7 @@ public class SubscriptionService {
         }
 
         if (user.getBalance() < subscriptionRequestDTO.getAmount()) {
-            throw new BadRequestException("Insufficient balance");
+            throw new RuntimeException("Insufficient balance");
         }
 
         Subscription subscription = new Subscription();
