@@ -10,12 +10,12 @@ import lombok.Data;
 public class UserRequestDTO {
     @NotBlank(message = "Name is required")
     private String name;
-
+    
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
     @Size(max = 127, message = "Password must be less than 128 characters long")
     @Pattern(regexp = ".*[A-Z].*", message = "Password must contain at least one uppercase letter")
-    @Pattern(regexp = ".*[0-9].*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*|.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*[0-9].*", 
+    @Pattern(regexp = "(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).*", 
             message = "Password must contain at least one digit and one special character")
     @Pattern(regexp = "^\\S*$", message = "Password cannot contain whitespace")
     private String password;
