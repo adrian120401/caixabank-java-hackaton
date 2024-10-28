@@ -168,7 +168,7 @@ public class AccountService {
 
         Map<String, Double> assetPrices = getAssetPrices();
         if (!assetPrices.containsKey(assetRequestDTO.getAssetSymbol())) {
-            throw new RuntimeException("Internal error occurred while purchasing the asset");
+            throw new RuntimeException("Internal error occurred while purchasing the asset.");
         }
 
         double currentPrice = assetPrices.get(assetRequestDTO.getAssetSymbol());
