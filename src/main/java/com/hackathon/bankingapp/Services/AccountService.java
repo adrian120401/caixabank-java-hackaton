@@ -125,7 +125,7 @@ public class AccountService {
                 .orElseThrow(() -> new NotFoundException("Target account not found"));
 
         if (Double.parseDouble(amount) > user.getBalance()) {
-            throw new ForbiddenException("Insufficient balance");
+            throw new RuntimeException("Insufficient balance");
         }
 
         targetAccount.setBalance(targetAccount.getBalance() + Double.parseDouble(amount));
