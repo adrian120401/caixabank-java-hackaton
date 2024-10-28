@@ -32,6 +32,7 @@ public class SubscriptionService {
 
     public void createSubscription(SubscriptionRequestDTO subscriptionRequestDTO) {
         String username = jwtProvider.getCurrentUserDetails().getUsername();
+        
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
