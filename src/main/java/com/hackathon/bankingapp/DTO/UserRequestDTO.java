@@ -29,5 +29,4 @@ public class UserRequestDTO {
 
     @NotBlank(message = "Phone number is required")
     private String phoneNumber;
-    
 }
