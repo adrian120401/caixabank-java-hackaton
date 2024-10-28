@@ -175,7 +175,7 @@ public class AccountService {
         double quantity = Math.round((Double.parseDouble(assetRequestDTO.getAmount()) / currentPrice) * 1e10) / 1e10;
 
         if (Double.parseDouble(assetRequestDTO.getAmount()) > user.getBalance()) {
-            throw new BadRequestException("Insufficient balance");
+            throw new RuntimeException("Internal error occurred while purchasing the asset.");
         }
 
         Asset asset = new Asset();
@@ -255,7 +255,7 @@ public class AccountService {
         double totalHoldings = getCurrentHoldings(user, assetRequestDTO.getAssetSymbol());
 
         if (quantityToSell > totalHoldings) {
-            throw new RuntimeException("Internal error occurred while purchasing the asset");
+            throw new RuntimeException("Internal error occurred while selling the asset.");
         }
 
         double totalGainLoss = 0;
@@ -370,7 +370,7 @@ public class AccountService {
                 });
 
         if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new RuntimeException("Internal error occurred while purchasing the asset");
+            throw new RuntimeException("Internal error occurred while purchasing the asset.");
         }
 
         return response.getBody();
