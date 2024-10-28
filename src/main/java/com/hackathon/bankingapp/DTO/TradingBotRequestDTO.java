@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class TradingBotRequestDTO {
     
-    @NotBlank
+    @NotBlank(message = "PIN cannot be null or empty")
     private String pin;
 }
