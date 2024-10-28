@@ -6,6 +6,7 @@ import com.hackathon.bankingapp.DTO.TransactionResponseDTO;
 import com.hackathon.bankingapp.Entities.Asset;
 import com.hackathon.bankingapp.Entities.Transaction;
 import com.hackathon.bankingapp.Entities.User;
+import com.hackathon.bankingapp.Exceptions.BadRequestException;
 import com.hackathon.bankingapp.Exceptions.ForbiddenException;
 import com.hackathon.bankingapp.Exceptions.NotFoundException;
 import com.hackathon.bankingapp.Exceptions.UnauthorizedException;
@@ -100,7 +101,7 @@ public class AccountService {
         }
 
         if (Double.parseDouble(amount) > user.getBalance()) {
-            throw new RuntimeException("Insufficient balance");
+            throw new BadRequestException("Insufficient balance");
         }
 
         user.setBalance(user.getBalance() - Double.parseDouble(amount));
@@ -125,7 +126,7 @@ public class AccountService {
                 .orElseThrow(() -> new NotFoundException("Target account not found"));
 
         if (Double.parseDouble(amount) > user.getBalance()) {
-            throw new RuntimeException("Insufficient balance");
+            throw new BadRequestException("Insufficient balance");
         }
 
         targetAccount.setBalance(targetAccount.getBalance() + Double.parseDouble(amount));
