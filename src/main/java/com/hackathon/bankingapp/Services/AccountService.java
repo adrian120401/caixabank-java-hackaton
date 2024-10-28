@@ -175,7 +175,7 @@ public class AccountService {
         double quantity = Math.round((Double.parseDouble(assetRequestDTO.getAmount()) / currentPrice) * 1e10) / 1e10;
 
         if (Double.parseDouble(assetRequestDTO.getAmount()) > user.getBalance()) {
-            throw new RuntimeException("Internal error occurred while purchasing the asset");
+            throw new BadRequestException("Insufficient balance");
         }
 
         Asset asset = new Asset();
