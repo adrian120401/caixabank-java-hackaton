@@ -2,8 +2,14 @@ package com.hackathon.bankingapp.Controllers;
 
 import com.hackathon.bankingapp.DTO.AssetBuyDTO;
 import com.hackathon.bankingapp.DTO.AssetSellDTO;
+import com.hackathon.bankingapp.DTO.DepositRequestDTO;
 import com.hackathon.bankingapp.DTO.TransactionResponseDTO;
+import com.hackathon.bankingapp.DTO.TransferRequestDTO;
+import com.hackathon.bankingapp.DTO.WithdrawRequestDTO;
 import com.hackathon.bankingapp.Services.AccountService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -56,65 +62,26 @@ public class AccountController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<Map<String, String>> deposit(@RequestBody Map<String, Object> requestBody) {
-        Object amountObj = requestBody.get("amount");
-        String amount = amountObj != null ? amountObj.toString() : null;
-        String pin = (String) requestBody.get("pin");
-
-        if (amount == null || amount.isEmpty() || pin == null || pin.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Amount and pin are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-        accountService.deposit(amount, pin);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("msg", "Cash deposited successfully");
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<Map<String, String>> deposit(@RequestBody @Valid DepositRequestDTO request) {
+        accountService.deposit(request.getAmount(), request.getPin());
+        return ResponseEntity.ok(Map.of("msg", "Cash deposited successfully"));
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<Map<String, String>> withdraw(@RequestBody Map<String, Object> requestBody) {
-        Object amountObj = requestBody.get("amount");
-        String amount = amountObj != null ? amountObj.toString() : null;
-        String pin = (String) requestBody.get("pin");
-
-        if (amount == null || amount.isEmpty() || pin == null || pin.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Amount and pin are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-        accountService.withdraw(amount, pin);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("msg", "Cash withdrawn successfully");
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<Map<String, String>> withdraw(@RequestBody @Valid WithdrawRequestDTO request) {
+        accountService.withdraw(request.getAmount(), request.getPin());
+        return ResponseEntity.ok(Map.of("msg", "Cash withdrawn successfully"));
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<Map<String, String>> transfer(@RequestBody Map<String, Object> requestBody) {
-        Object amountObj = requestBody.get("amount");
-        String amount = amountObj != null ? amountObj.toString() : null;
-        String pin = (String) requestBody.get("pin");
-        String targetAccountNumber = (String) requestBody.get("targetAccountNumber");
-
-        if (amount == null || amount.isEmpty() || pin == null || pin.isEmpty() || targetAccountNumber == null
-                || targetAccountNumber.isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Amount, pin and targetAccountNumber are required");
-            return ResponseEntity.badRequest().body(response);
-        }
-        accountService.transfer(amount, pin, targetAccountNumber);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("msg", "Fund transferred successfully");
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<Map<String, String>> transfer(@RequestBody @Valid TransferRequestDTO request) {
+        accountService.transfer(request.getAmount(), request.getPin(), request.getTargetAccountNumber());
+        return ResponseEntity.ok(Map.of("msg", "Fund transferred successfully"));
     }
 
     @GetMapping("/transactions")
     public ResponseEntity<List<TransactionResponseDTO>> getTransactions() {
-        List<TransactionResponseDTO> transactions = accountService.getTransactions();
-        return ResponseEntity.ok().body(transactions);
+        return ResponseEntity.ok(accountService.getTransactions());
     }
 
     @PostMapping("/buy-asset")
