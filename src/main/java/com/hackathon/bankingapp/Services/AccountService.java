@@ -100,7 +100,7 @@ public class AccountService {
         }
 
         if (Double.parseDouble(amount) > user.getBalance()) {
-            throw new RuntimeException("Insufficient balance");
+            throw new ForbiddenException("Insufficient balance");
         }
 
         user.setBalance(user.getBalance() - Double.parseDouble(amount));
