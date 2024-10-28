@@ -73,7 +73,7 @@ public class AccountController {
         return ResponseEntity.ok(Map.of("msg", "Cash withdrawn successfully"));
     }
 
-    @PostMapping("/transfer")
+    @PostMapping("/fund-transfer")
     public ResponseEntity<Map<String, String>> transfer(@RequestBody @Valid TransferRequestDTO request) {
         accountService.transfer(request.getAmount(), request.getPin(), request.getTargetAccountNumber());
         return ResponseEntity.ok(Map.of("msg", "Fund transferred successfully"));
