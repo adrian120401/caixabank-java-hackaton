@@ -1,81 +1,86 @@
 package com.hackathon.bankingapp.Services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.hackathon.bankingapp.Repositories.SubscriptionRepository;
 import com.hackathon.bankingapp.Repositories.TransactionRepository;
 import com.hackathon.bankingapp.Repositories.UserRepository;
 import com.hackathon.bankingapp.Security.JwtTokenProvider;
 import com.hackathon.bankingapp.Utils.Enums.TransactionType;
+
+import lombok.extern.slf4j.Slf4j;
+
 import com.hackathon.bankingapp.DTO.SubscriptionRequestDTO;
-import com.hackathon.bankingapp.Entities.Subscription;
 import com.hackathon.bankingapp.Entities.Transaction;
 import com.hackathon.bankingapp.Entities.User;
 import com.hackathon.bankingapp.Exceptions.ForbiddenException;
 import com.hackathon.bankingapp.Exceptions.NotFoundException;
 
-import java.util.List;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 public class SubscriptionService {
 
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private SubscriptionRepository subscriptionRepository;
+    private JwtTokenProvider jwtProvider;
     @Autowired
     private TransactionRepository transactionRepository;
-    @Autowired
-    private JwtTokenProvider jwtProvider;
+    
+    private final Map<String, ScheduledFuture<?>> activeSubscriptions = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public void createSubscription(SubscriptionRequestDTO subscriptionRequestDTO) {
         String username = jwtProvider.getCurrentUserDetails().getUsername();
-        User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userRepository.findByEmail(username).orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!user.getPin().equals(subscriptionRequestDTO.getPin())) {
             throw new ForbiddenException("Invalid PIN");
         }
 
-        Subscription subscription = new Subscription();
-        subscription.setUser(user);
-        subscription.setAmount(subscriptionRequestDTO.getAmount());
-        subscription.setIntervalSeconds(subscriptionRequestDTO.getIntervalSeconds());
-        subscription.setActive(true);
-        subscription.setLastExecutionTime(System.currentTimeMillis() / 1000);
+        String userId = user.getEmail();
+        cancelExistingSubscription(userId);
 
-        subscriptionRepository.save(subscription);
+        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                processSubscriptionPayment(user, subscriptionRequestDTO.getAmount());
+            } catch (Exception e) {
+                log.error("Error processing subscription payment: {}", e.getMessage());
+                cancelExistingSubscription(userId);
+            }
+        }, 0, subscriptionRequestDTO.getIntervalSeconds(), TimeUnit.SECONDS);
+
+        activeSubscriptions.put(userId, future);
     }
 
-    @Scheduled(fixedRate = 1000)
-    public void processSubscriptions() {
-        List<Subscription> activeSubscriptions = subscriptionRepository.findByActive(true);
-        for (Subscription sub : activeSubscriptions) {
-            long currentTime = System.currentTimeMillis() / 1000;
-            if (currentTime - sub.getLastExecutionTime() >= sub.getIntervalSeconds()) {
-                try {
-                    if (sub.getAmount() > sub.getUser().getBalance()) {
-                        return;
-                    }
-                    sub.getUser().setBalance(sub.getUser().getBalance() - sub.getAmount());
-                    userRepository.save(sub.getUser());
+    private void processSubscriptionPayment(User user, double amount) {
+        if (user.getBalance() < amount) {
+            throw new RuntimeException("Insufficient balance");
+        }
+        
+        user.setBalance(user.getBalance() - amount);
+        Transaction transaction = new Transaction();
+        transaction.setAmount(amount);
+        transaction.setTransactionType(TransactionType.SUBSCRIPTION);
+        transaction.setTransactionDate(System.currentTimeMillis());
+        transaction.setSourceAccount(user);
+        
+        transactionRepository.save(transaction);
+    }
 
-                    Transaction transaction = new Transaction();
-                    transaction.setAmount(sub.getAmount());
-                    transaction.setTransactionType(TransactionType.SUBSCRIPTION);
-                    transaction.setTransactionDate(System.currentTimeMillis());
-                    transaction.setSourceAccount(sub.getUser());
-                    transactionRepository.save(transaction);
-
-                    sub.setLastExecutionTime(currentTime);
-                    subscriptionRepository.save(sub);
-                } catch (Exception e) {
-                    sub.setActive(false);
-                    subscriptionRepository.save(sub);
-                }
-            }
+    private void cancelExistingSubscription(String userId) {
+        ScheduledFuture<?> existingFuture = activeSubscriptions.get(userId);
+        if (existingFuture != null) {
+            existingFuture.cancel(false);
+            activeSubscriptions.remove(userId);
         }
     }
 }
