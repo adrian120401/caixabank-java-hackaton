@@ -39,12 +39,16 @@ public class SubscriptionService {
             throw new ForbiddenException("Invalid PIN");
         }
 
+        if (user.getBalance() < subscriptionRequestDTO.getAmount()) {
+            throw new RuntimeException("Insufficient balance for subscription");
+        }
+
         Subscription subscription = new Subscription();
         subscription.setUser(user);
         subscription.setAmount(subscriptionRequestDTO.getAmount());
         subscription.setIntervalSeconds(subscriptionRequestDTO.getIntervalSeconds());
         subscription.setActive(true);
-        subscription.setLastExecutionTime(System.currentTimeMillis() / 1000);
+        subscription.setLastExecutionTime(System.currentTimeMillis());
 
         subscriptionRepository.save(subscription);
     }
@@ -52,21 +56,27 @@ public class SubscriptionService {
     @Scheduled(fixedRate = 1000)
     public void processSubscriptions() {
         List<Subscription> activeSubscriptions = subscriptionRepository.findByActive(true);
+        long currentTime = System.currentTimeMillis();
+
         for (Subscription sub : activeSubscriptions) {
-            long currentTime = System.currentTimeMillis() / 1000;
-            if (currentTime - sub.getLastExecutionTime() >= sub.getIntervalSeconds()) {
+            if ((currentTime - sub.getLastExecutionTime()) >= (sub.getIntervalSeconds() * 1000L)) {
+                User user = sub.getUser();
+
+                if (user.getBalance() < sub.getAmount()) {
+                    sub.setActive(false);
+                    subscriptionRepository.save(sub);
+                    continue;
+                }
+
                 try {
-                    if (sub.getAmount() > sub.getUser().getBalance()) {
-                        return;
-                    }
-                    sub.getUser().setBalance(sub.getUser().getBalance() - sub.getAmount());
-                    userRepository.save(sub.getUser());
+                    user.setBalance(user.getBalance() - sub.getAmount());
+                    userRepository.save(user);
 
                     Transaction transaction = new Transaction();
                     transaction.setAmount(sub.getAmount());
                     transaction.setTransactionType(TransactionType.SUBSCRIPTION);
-                    transaction.setTransactionDate(System.currentTimeMillis());
-                    transaction.setSourceAccount(sub.getUser());
+                    transaction.setTransactionDate(currentTime);
+                    transaction.setSourceAccount(user);
                     transactionRepository.save(transaction);
 
                     sub.setLastExecutionTime(currentTime);
