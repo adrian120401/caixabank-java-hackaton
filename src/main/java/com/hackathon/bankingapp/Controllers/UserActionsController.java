@@ -23,15 +23,15 @@ public class UserActionsController {
     @Autowired
     private TradingBotService tradingBotService;
 
-/*     @PostMapping("/subscribe")
+    @PostMapping("/subscribe")
     public ResponseEntity<String> createSubscription(@RequestBody @Valid SubscriptionRequestDTO subscriptionRequestDTO) {
         subscriptionService.createSubscription(subscriptionRequestDTO);
         return ResponseEntity.ok("Subscription created successfully.");
-    } */
+    }
 
-    @PostMapping("/enable-auto-invest")
+/*     @PostMapping("/enable-auto-invest")
     public ResponseEntity<String> enableAutoInvest(@RequestBody @Valid TradingBotRequestDTO tradingBotRequestDTO) {
         tradingBotService.createTradingBot(tradingBotRequestDTO);
         return ResponseEntity.ok("Automatic investment enabled successfully.");
-    }
+    } */
 }
