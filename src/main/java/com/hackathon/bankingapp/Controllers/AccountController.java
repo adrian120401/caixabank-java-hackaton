@@ -70,13 +70,13 @@ public class AccountController {
     }
 
     @PostMapping("/buy-asset")
-    public ResponseEntity<String> buyAsset(@RequestBody AssetBuyDTO assetRequestDTO) {
+    public ResponseEntity<String> buyAsset(@RequestBody @Valid AssetBuyDTO assetRequestDTO) {
         accountService.buyAsset(assetRequestDTO);
         return ResponseEntity.ok("Asset purchase successful.");
     }
 
     @PostMapping("/sell-asset")
-    public ResponseEntity<String> sellAsset(@RequestBody AssetSellDTO assetRequestDTO) {
+    public ResponseEntity<String> sellAsset(@RequestBody @Valid AssetSellDTO assetRequestDTO) {
         accountService.sellAsset(assetRequestDTO);
         return ResponseEntity.ok("Asset sale successful.");
     }
